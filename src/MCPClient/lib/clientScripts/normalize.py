@@ -8,9 +8,14 @@ import os
 import shutil
 import traceback
 import uuid
+from collections import defaultdict
+from types import TracebackType
 from typing import Callable
+from typing import DefaultDict
+from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
 
 import django
 import transcoder
@@ -20,16 +25,20 @@ django.setup()
 import databaseFunctions
 import fileOperations
 from client.job import Job
+from custom_handlers import get_script_logger
 from dicts import ReplacementDict
 from django.conf import settings as mcpclient_settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import F
 from fpr.models import FPRule
 from lib import setup_dicts
 from main.models import Derivation
 from main.models import File
 from main.models import FileFormatVersion
 from main.models import FileID
+
+logger = get_script_logger("archivematica.mcp.client.normalize")
 
 # Return codes
 SUCCESS = 0
@@ -355,7 +364,59 @@ def get_default_rule(purpose: str) -> FPRule:
     return FPRule.active.get(purpose="default_" + purpose)
 
 
-def main(job: Job, opts: NormalizeArgs) -> int:
+class DeferredFPRuleCounter:
+    """Deferred counter for FPRule attempts, successes, and failures.
+
+    This class postpones database writes to aggregate updates and minimize the
+    duration of transactions, which is beneficial when dealing with long-running
+    batches.
+    """
+
+    def __init__(self) -> None:
+        self._counters: DefaultDict[uuid.UUID, Dict[str, int]] = defaultdict(
+            lambda: {"count_attempts": 0, "count_okay": 0, "count_not_okay": 0}
+        )
+
+    def __enter__(self) -> "DeferredFPRuleCounter":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        try:
+            self.save()
+        except Exception as err:
+            logger.error("Failed to save counters: %s", err, exc_info=True)
+
+    def record_attempt(self, fprule: FPRule) -> None:
+        self._counters[fprule.uuid]["count_attempts"] += 1
+
+    def record_success(self, fprule: FPRule) -> None:
+        self._counters[fprule.uuid]["count_okay"] += 1
+
+    def record_failure(self, fprule: FPRule) -> None:
+        self._counters[fprule.uuid]["count_not_okay"] += 1
+
+    def save(self) -> None:
+        """Persist all aggregated FPRule counters in a single transaction.
+
+        This method updates the success and failure rates of FPRules by
+        incrementing their respective counters. It uses Django's F() expressions
+        to ensure atomic updates and prevent race conditions.
+        """
+        with transaction.atomic():
+            for fprule_id, increments in self._counters.items():
+                FPRule.objects.filter(uuid=fprule_id).update(
+                    count_attempts=F("count_attempts") + increments["count_attempts"],
+                    count_okay=F("count_okay") + increments["count_okay"],
+                    count_not_okay=F("count_not_okay") + increments["count_not_okay"],
+                )
+
+
+def main(job: Job, opts: NormalizeArgs, counter: DeferredFPRuleCounter) -> int:
     """Find and execute normalization commands on input file."""
     # TODO fix for maildir working only on attachments
 
@@ -489,7 +550,13 @@ def main(job: Job, opts: NormalizeArgs) -> int:
 
     replacement_dict = get_replacement_dict(job, opts)
     cl = transcoder.CommandLinker(
-        job, rule, command, replacement_dict, opts, once_normalized_callback(job)
+        job,
+        rule,
+        command,
+        replacement_dict,
+        opts,
+        once_normalized_callback(job),
+        counter,
     )
     exitstatus = cl.execute()
 
@@ -540,6 +607,7 @@ def main(job: Job, opts: NormalizeArgs) -> int:
                 replacement_dict,
                 opts,
                 once_normalized_callback(job),
+                counter,
             )
             exitstatus = cl.execute()
 
@@ -611,7 +679,7 @@ def parse_args(parser: argparse.ArgumentParser, job: Job) -> NormalizeArgs:
 def call(jobs: List[Job]) -> None:
     parser = get_parser()
 
-    with transaction.atomic():
+    with DeferredFPRuleCounter() as counter, transaction.atomic():
         for job in jobs:
             with job.JobContext():
                 opts = parse_args(parser, job)
@@ -625,7 +693,7 @@ def call(jobs: List[Job]) -> None:
                     continue
 
                 try:
-                    job.set_status(main(job, opts))
+                    job.set_status(main(job, opts, counter))
                 except Exception as e:
                     job.print_error(str(e))
                     job.set_status(1)

@@ -45,7 +45,8 @@ def test_normalization_fails_if_original_file_does_not_exist() -> None:
     job = mock.Mock(spec=Job)
     opts = mock.Mock(file_uuid=file_uuid)
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.NO_RULE_FOUND
     job.print_error.assert_called_once_with(
@@ -67,7 +68,8 @@ def test_normalization_skips_submission_documentation_file_if_group_use_does_not
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     assert job.print_output.mock_calls == [
@@ -93,7 +95,8 @@ def test_normalization_skips_file_if_group_use_does_not_match(
         normalize_file_grp_use="access",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     assert job.print_output.mock_calls == [
@@ -178,7 +181,8 @@ def test_manual_normalization_creates_event_and_derivation(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     assert job.print_output.mock_calls == [
@@ -250,7 +254,8 @@ def test_manual_normalization_fails_with_invalid_normalization_csv(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.NO_RULE_FOUND
     assert job.print_error.mock_calls == [
@@ -297,7 +302,8 @@ def test_manual_normalization_matches_by_filename_instead_of_normalization_csv(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     assert job.print_error.mock_calls == []
@@ -350,7 +356,8 @@ def test_manual_normalization_matches_from_multiple_filenames(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     assert job.print_error.mock_calls == []
@@ -413,7 +420,8 @@ def test_normalization_falls_back_to_default_rule(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     command_linker.assert_called_once()
@@ -474,7 +482,8 @@ def test_normalization_finds_rule_by_file_format_version(
         normalize_file_grp_use="original",
     )
 
-    result = normalize.main(job, opts)
+    with normalize.DeferredFPRuleCounter() as counter:
+        result = normalize.main(job, opts, counter)
 
     assert result == normalize.SUCCESS
     command_linker.assert_called_once()
