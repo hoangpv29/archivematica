@@ -112,26 +112,22 @@ class CommandLinker:
         self, job, fprule, command, replacement_dict, opts, on_success, counter
     ):
         self.fprule = fprule
-        self.command = command
-        self.replacement_dict = replacement_dict
-        self.opts = opts
-        self.on_success = on_success
-        self.commandObject = Command(
-            job, self.command, replacement_dict, self.on_success, opts
-        )
+        self.cmd = Command(job, command, replacement_dict, on_success, opts)
         self.counter = counter
 
     def __str__(self):
-        return (
-            f"[Command Linker] FPRule: {self.fprule.uuid} Command: {self.commandObject}"
-        )
+        return f"[Command Linker] FPRule: {self.fprule.uuid} Command: {self.cmd}"
+
+    @property
+    def output_location(self):
+        return self.cmd.output_location
 
     def execute(self):
         """Execute the command, and track the success statistics.
 
         Returns 0 on success, non-0 on failure."""
         self.counter.record_attempt(self.fprule)
-        ret = self.commandObject.execute()
+        ret = self.cmd.execute()
         if ret:
             self.counter.record_failure(self.fprule)
         else:

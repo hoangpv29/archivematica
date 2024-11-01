@@ -573,8 +573,8 @@ def main(job: Job, opts: NormalizeArgs, counter: DeferredFPRuleCounter) -> int:
     if (
         exitstatus != 0
         and opts.purpose in ("access", "thumbnail")
-        and cl.commandObject.output_location
-        and (not os.path.isfile(cl.commandObject.output_location))
+        and cl.output_location
+        and (not os.path.isfile(cl.output_location))
     ):
         # Fall back to default rule
         try:
@@ -614,7 +614,7 @@ def main(job: Job, opts: NormalizeArgs, counter: DeferredFPRuleCounter) -> int:
     # Store thumbnails locally for use during AIP searches
     # TODO is this still needed, with the storage service?
     if "thumbnail" in opts.purpose:
-        thumbnail_filepath = cl.commandObject.output_location
+        thumbnail_filepath = cl.output_location
         thumbnail_storage_dir = os.path.join(
             mcpclient_settings.SHARED_DIRECTORY, "www", "thumbnails", opts.sip_uuid
         )
