@@ -203,7 +203,15 @@ RUN set -ex \
 		unar \
 		unrar-free \
 		uuid \
+		unzip \
 	&& rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+COPY --link src/auto-install.xml /
+
+RUN set -ex \
+    && curl --retry 3 -so /tmp/verapdf-installer.zip -L http://downloads.verapdf.org/rel/verapdf-installer.zip \
+    && unzip -d /tmp/ tmp/verapdf-installer.zip && /tmp/verapdf-greenfield-1.26.2/verapdf-install /auto-install.xml \
+    && rm /tmp/verapdf-installer.zip && rm -rf /tmp/verapdf-greenfield-1.26.2 && rm /auto-install.xml
 
 RUN set -ex \
 	&& groupadd --gid ${GROUP_ID} --system archivematica \
