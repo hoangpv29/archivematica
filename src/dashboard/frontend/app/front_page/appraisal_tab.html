@@ -102,14 +102,14 @@
   </div>
 </ui-minimize-panel>
 
-<ui-minimize-panel title="{{ 'File list' | translate }}" open='false'>
+<ui-minimize-panel title="{{ 'Danh sách tệp' | translate }}" open='false'>
   <div class='panel panel-default' ng-controller="FileListController as vm">
     <div class='panel-heading'>
-      {{ "File list" | translate }}
+      {{ "Danh sách tệp" | translate }}
 
       <span class="counts" ng-if="vm.selected_files.selected.length > 0"><b><ng-pluralize count="(vm.selected_files.selected | filter: {'type': 'file'} | facet).length" when="{'1': '1 object', 'other': '{} objects'}"></ng-pluralize></b> in list, <ng-pluralize count="vm.selected.length" when="{'1': '1 object', 'other': '{} objects'}"></ng-pluralize> selected</span>
 
-      <span class="counts" ng-if="vm.selected_files.selected.length === 0">{{ "File list is empty." | translate }}</span>
+      <span class="counts" ng-if="vm.selected_files.selected.length === 0">{{ "Danh sách tệp trống." | translate }}</span>
 
       <!--
       <fieldset>
@@ -144,8 +144,8 @@
       </form>
 
       <div class='actions' ng-if="vm.selected_files.selected.length > 0">
-        <a class='btn btn-sm btn-default' ng-hide="vm.show_path" ng-click="vm.show_path = !vm.show_path">{{ "Show path" | translate }}</a>
-        <a class='btn btn-sm btn-default' ng-show="vm.show_path" ng-click="vm.show_path = !vm.show_path">{{ "Hide path" | translate }}</a>
+        <a class='btn btn-sm btn-default' ng-hide="vm.show_path" ng-click="vm.show_path = !vm.show_path">{{ "Hiển thị đường dẫn" | translate }}</a>
+        <a class='btn btn-sm btn-default' ng-show="vm.show_path" ng-click="vm.show_path = !vm.show_path">{{ "Ẩn đường dẫn" | translate }}</a>
       </div>
     </div>
 
@@ -155,15 +155,15 @@
           <th>
             <input type="checkbox"
                    name="checked_files[]"
-                   value="Select all"
+                   value="Chọn tất cả"
                    ng-checked="vm.all_selected"
                    ng-click="vm.select_all()">
           </th>
-          <th><a ng-click="vm.set_sort_property('title')">{{ "Filename" | translate }}</a></th>
-          <th ng-if="vm.show_path"><a ng-click="vm.set_sort_property('relative_path')">{{ "Path" | translate }}</a></th>
-          <th><a ng-click="vm.set_sort_property('size')">{{ "Size" | translate }}</a></th>
-          <th><a ng-click="vm.set_sort_property('last_modified')">{{ "Last modified" | translate }}</a></th>
-          <th>{{ "Tags" | translate }}</th>
+          <th><a ng-click="vm.set_sort_property('title')">{{ "Tên tệp" | translate }}</a></th>
+          <th ng-if="vm.show_path"><a ng-click="vm.set_sort_property('relative_path')">{{ "Đường dẫn" | translate }}</a></th>
+          <th><a ng-click="vm.set_sort_property('size')">{{ "Dung lượng" | translate }}</a></th>
+          <th><a ng-click="vm.set_sort_property('last_modified')">{{ "Sửa đổi lần cuối" | translate }}</a></th>
+          <th>{{ "Thẻ" | translate }}</th>
         </tr>
         <tr ng-repeat="file in vm.selected_files.selected | facet | filter: {'date': '*'} : vm.facet_filter | filter: {'type': 'file'} | orderBy: vm.sort_property : vm.sort_reverse">
           <td>
@@ -191,15 +191,15 @@
   </div>
 </ui-minimize-panel>
 
-<ui-minimize-panel title="{{ 'ArchivesSpace' | translate }}" class="aspace-panel">
+<ui-minimize-panel title="{{ 'Không gian Lưu trữ' | translate }}" class="aspace-panel">
   <div class='panel panel-default' ng-controller="ArchivesSpaceController">
     <div class='panel-heading'>
-      {{ "ArchivesSpace" | translate }} <span ng-if="loading"><i class="fa fa-spinner fa-spin"></i></span>
+      {{ "Không gian Lưu trữ" | translate }} <span ng-if="loading"><i class="fa fa-spinner fa-spin"></i></span>
 
       <form ng-submit="load_data({title: title_query, identifier: id_query})" class="form-inline">
         <input type="text" ng-model="title_query" placeholder="{{ 'Title' | translate }}" class="form-control input-sm"/>
         <input type="text" ng-model="id_query" placeholder="{{ 'Identifier' | translate }}" class="form-control input-sm"/>
-        <input type="submit" class='btn btn-sm btn-primary' id="archivesspace_search" value="{{ 'Search ArchivesSpace' | translate }}"/>
+        <input type="submit" class='btn btn-sm btn-primary' id="archivesspace_search" value="{{ 'Tìm kiếm không gian Lưu trữ' | translate }}"/>
       </form>
 
       <div class="actions">
@@ -208,13 +208,13 @@
                id='add_child_record'
                ng-disabled="!selected"
                ng-click="add_child(selected)"
-               value='{{ "Add new child record" | translate }}'>
+               value='{{ "Thêm bản ghi con mới" | translate }}'>
         <input type='button'
                class='btn btn-primary btn-sm'
                id='add_child_record'
                ng-disabled="selected.type !== 'resource' &amp;&amp; selected.type !== 'resource_component'"
                ng-click="add_digital_object(selected)"
-               value='{{ "Add new digital object" | translate }}'>
+               value='{{ "Thêm đối tượng số mới" | translate }}'>
         <a class='btn btn-primary btn-sm'
            href="{{ get_rights_url(selected) }}"
            ng-disabled="selected.type !== 'resource' &amp;&amp; selected.type !== 'resource_component'"
@@ -226,7 +226,7 @@
                id='edit_record'
                ng-disabled="!selected || selected.request_pending || selected.type === 'digital_object'"
                ng-click="edit(selected)"
-               value='{{ "Edit metadata" | translate }}'>
+               value='{{ "Chỉnh sửa siêu dữ liệu" | translate }}'>
         <input type='button'
                class='btn btn-primary btn-sm'
                id='delete_record'
@@ -239,7 +239,7 @@
                id='finalize_arrange'
                ng-disabled="selected.request_pending || (selected.type !== 'resource' &amp;&amp; selected.type !== 'resource_component')"
                ng-click="finalize_arrangement(selected)"
-               value='{{ "Finalize arrangement" | translate }}'>
+               value='{{ "Hoàn thiện sắp xếp" | translate }}'>
        </div>
     </div>
     <div class="transfer-tree panel-body">
